@@ -16,10 +16,11 @@ contract TokenShop is ERC721 {
     uint256 public constant USE_COST = 0.001 ether;
     address public constant SENTINEL = address(1);
 
-    error UnsufficientValue();
+    error InsufficientValue();
     error Exists();
     error NoFunds();
     error NoMarket();
+    error NotAllowed();
     error NoTransfer();
     error Unauthorized();
 
@@ -39,14 +40,24 @@ contract TokenShop is ERC721 {
         markets[SENTINEL] = SENTINEL;
     }
 
+    /****************************************************************
+     *                  MEMBERSHIP FUNCTIONS
+     ****************************************************************/
+
+    /// @notice Buy access to the TokenShop
+    /// @dev The message value must be at least 0.005 ether
     function buyAccess() external payable {
-        if (!msg.value == 0.005 ether) {
-            revert InsufficientValue();
-        }
+        if (msg.value < 0.005 ether) revert InsufficientValue();
 
         accounts[msg.sender] = msg.value;
     }
 
+    /****************************************************************
+     *                  MARKET MAKING
+     ****************************************************************/
+
+    /// @notice Permissionlessly create a market pool for `targetToken`
+    /// @param targetToken Address of the token that is being added
     function createMarket(address targetToken) external {
         if (accounts[msg.sender] < 0.001 ether) {
             revert NoFunds();
@@ -59,6 +70,10 @@ contract TokenShop is ERC721 {
         markets[targetToken] = true;
     }
 
+    /// @notice Sell tokens to the TokenShop for a fixed price
+    /// @dev The seller must have approved the TokenShop for `amount`
+    /// @param targetToken Address of the token the seller wishes to make a market for
+    /// @param amount The amount of the specified token the seller wishes to sell
     function sellTokens(address targetToken, uint256 amount) external {
         if (!markets[targetToken]) revert NoMarket();
         if (accounts[msg.sender] < 0.001 ether) revert NoFunds();
@@ -76,14 +91,50 @@ contract TokenShop is ERC721 {
         if (token.balanceOf(address(this)) != startingBalance + amount) revert NoTransfer();
     }
 
+    /****************************************************************
+     *                  MANAGEMENT FUNCTIONS
+     ****************************************************************/
+
+    /// @notice Allows a beneficiary organization to transfer out tokens
+    /// @dev Beneficiaries can be degen too! But caller must audit ERC20 code. 
+    /// @note ASSUME ALL TOKENS ARE HOSTILE UNLESS CONFIRMED OTHERWISE
+    function transferTokens(address targetToken, address to, uint256 amount) external {
+        if (msg.sender != target) revert Unauthorized();
+
+        IERC20(targetToken).transfer(to, amount);
+    }
+
+    /// @notice Allows the `target` to withdraw accrued feess
+    /// @param Documents a parameter just like in doxygen (must be followed by parameter name)
+    function withdrawFees(address to) external {
+        if (msg.sender != target) revert Unauthorized();
+        uint256 funds = targetFunds;
+        delete targetFunds;
+
+        (bool success, ) = to.call{value: funds}("");
+        if (!success) revert NoTransfer();        
+    }
+
+    /****************************************************************
+     *                  BENEFICIARY SETTERS
+     ****************************************************************/
+
+    /// @notice Nominates a new beneficiary
+    /// @param newTarget The address that can claim accumalated fees
     function changeTarget(address newTarget) external {
         if (msg.sender != target) revert Unuathorized();
         pendingTarget = newTarget;
     }
 
+    /// @notice Allows a nominated beneficiary to accept nomination
     function claimTarget() external {
         if (msg.sender != pendingTarget) revert Unauthorized();
         target = pendingTarget;
         delete pendingTarget;
+    }
+
+    /// @notice The TokenShop does not allow direct ETH transfers
+    receive() external {
+        revert NotAllowed();
     }
 }
