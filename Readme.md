@@ -25,4 +25,4 @@ The catch? Well, the BuidlGuidl (or whomever they nominate to take their place) 
 
 ## Will my accountant be happy?  
 
-Each invoice is minted as an ERC1155 token with an on-chain SVG invoice from the TokenShop contract. 
+Each invoice is minted as an ERC721 token with an on-chain SVG invoice from the TokenShop contract. As near to an on-chain invoice as can be done.
