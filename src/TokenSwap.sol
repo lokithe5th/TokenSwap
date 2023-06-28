@@ -43,6 +43,7 @@ contract TokenSwap is ERC721 {
     bytes6 internal paidLbl = 0x506169643a20;
     bytes7 internal blockLbl = 0x426c6f636b3a20;
 
+    // '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
     bytes32 internal svgStart0 = 0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230;
     bytes32 internal svgStart1 = 0x30302f73766722207072657365727665417370656374526174696f3d22784d69;
     bytes32 internal svgStart2 = 0x6e594d696e206d656574222076696577426f783d223020302033353020343030;
@@ -51,27 +52,10 @@ contract TokenSwap is ERC721 {
     bytes32 internal svgStart5 = 0x743d2231303025222066696c6c3d227768697465222f3e3c7465787420783d22;
     bytes32 internal svgStart6 = 0x31302220793d2232302220636c6173733d2262617365223e0000000000000000;
     
-
-
-    /// Equivalent to <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">
-/*    bytes32[7] internal svgPart0 =  [
-                                    0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230,
-                                    0x30302f73766722207072657365727665417370656374526174696f3d22784d69,
-                                    0x6e594d696e206d656574222076696577426f783d223020302033353020343030,
-                                    0x223e3c7374796c653e2e62617365207b666f6e742d73697a653a313470783b7d,
-                                    0x3c2f7374796c653e3c726563742077696474683d223130302522206865696768,
-                                    0x743d2231303025222066696c6c3d22626c61636b222f3e3c7465787420783d22,
-                                    0x31302220793d2232302220636c6173733d2262617365223e0000000000000000
-                                ];
-*/
-    //bytes1[] internal svgPart1 = 0x3c2f746578743e3c7465787420783d2231302220793d2234302220636c6173733d2262617365223e;
-    //bytes1[] internal svgPart2 = 0x3c2f746578743e3c7465787420783d2231302220793d2236302220636c6173733d2262617365223e;
-    //bytes1[] internal svgPart3 = 0x3c2f746578743e3c7465787420783d2231302220793d223134302220636c6173733d2262617365223e;
-
     /// Equal to "</text><text x="10" y="
-    bytes24 internal svgLinePart1 = 0x3c2f746578743e3c7465787420783d2231302220793d2230;
+    bytes23 internal svgLinePart1 = 0x3c2f746578743e3c7465787420783d2231302220793d22;
     /// Equal to " class="base">
-    bytes16 internal svgLinePart2 = 0x302220636c6173733d2262617365223e;
+    bytes15 internal svgLinePart2 = 0x2220636c6173733d2262617365223e;
     bytes13 internal svgEnd = 0x3c2f746578743e3c2f7376673e;
 
 /*
@@ -230,21 +214,21 @@ contract TokenSwap is ERC721 {
     function generateSVGofTokenById(uint256 id) public view returns (string memory) {
         if (invoices[id].seller == address(0)) revert Invalid();
 
-        string memory svg = string(abi.encodePacked(createSVGStart(), invoiceNumberLbl, id.toString(), createSVGLine("60"), sellerLbl, invoices[id].seller.toHexString()));
-        svg = string(abi.encodePacked(svg, createSVGLine("80"), tokenLbl, invoices[id].token.toHexString(), createSVGLine("100")));
+        string memory svg = string(abi.encodePacked(createSVGStart(), invoiceNumberLbl, id.toString(), createSVGLine(0x003630), sellerLbl, invoices[id].seller.toHexString()));
+        svg = string(abi.encodePacked(svg, createSVGLine(0x003830), tokenLbl, invoices[id].token.toHexString(), createSVGLine(0x313030)));
         return string(abi.encodePacked(svg, amountLbl, invoices[id].amountOfTokens.toString(), createSVGMiddle(), invoices[id].blocknumber.toString(), svgEnd));
     }
 
-    function createSVGLine(string memory y) internal view returns (string memory) {
-        return string(abi.encodePacked(svgLinePart1, y, svgLinePart2));
+    function createSVGLine(bytes3 y) internal view returns (string memory) {
+        return string(abi.encode(svgLinePart1, y, svgLinePart2));
     }
 
     function createSVGStart() internal view returns (string memory) {
-        return string(abi.encodePacked(svgStart0, svgStart1, svgStart2, svgStart3, svgStart4, svgStart5, svgStart6, headingLbl, createSVGLine("40")));
+        return string(abi.encodePacked(svgStart0, svgStart1, svgStart2, svgStart3, svgStart4, svgStart5, svgStart6, headingLbl, createSVGLine(0x003430)));
     }
 
     function createSVGMiddle() internal view returns (string memory) {
-        return string(abi.encodePacked(createSVGLine("120"), paidLbl, "0.001 ether", createSVGLine("140"), blockLbl));
+        return string(abi.encodePacked(createSVGLine(0x313230), paidLbl, "0.001 ether", createSVGLine(0x313430), blockLbl));
     }
 
     /****************************************************************
