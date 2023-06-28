@@ -25,10 +25,11 @@ contract TokenSwap is ERC721 {
     string[] private template = [
         "TokenSwap Invoice",
         "INV-",
-        "Seller",
-        "Token",
-        "Amount",
-        "Paid"
+        "Seller: ",
+        "Token: ",
+        "Amount: ",
+        "Paid: ",
+        "Block: "
     ];
 
     string[10] internal svgParts = [
@@ -38,7 +39,7 @@ contract TokenSwap is ERC721 {
         '</text><text x="10" y="80" class="base">',
         '</text><text x="10" y="100" class="base">',
         '</text><text x="10" y="120" class="base">',
-//        '</text><text x="10" y="140" class="base">',
+        '</text><text x="10" y="140" class="base">',
 //        '</text><text x="10" y="160" class="base">',
 //        '</text><text x="10" y="160" class="base">',
         '</text></svg>'
@@ -80,6 +81,7 @@ contract TokenSwap is ERC721 {
         address seller; /// the account selling the tokens
         address token; /// the token that was sold
         uint256 amountOfTokens; /// the amount of tokens sold
+        uint256 blocknumber; /// Assists with tracing/verifying
     }
 
     /// Accounts to deposits
@@ -163,13 +165,27 @@ contract TokenSwap is ERC721 {
     /// @param  id Target for rendering
     /// @return string SVG image represented as a string
     function renderTokenById(uint256 id) public view returns (string memory) {
-        if (!_exists(id)) revert Invalid();
-        return string(abi.encodePacked(generateSVGofTokenById(id)));
+        return generateSVGofTokenById(id);
     }
 
+    /// @notice Generates an SVG image which can be read offline.
+    /// @param id Target invoice number
+    /// @return SVG in string form
+    /**
+     * TokenSwap Invoice
+     * INV-{id}
+     * Seller: {invoices[id].seller}
+     * Token: {invoices[id].token}
+     * Amount: {invoices[id].amountOfTokens}
+     * Paid: 0.001 ether
+     * Block: {invoices[id].blocknumber}
+     */
     function generateSVGofTokenById(uint256 id) public view returns (string memory) {
-        string memory svg = string.concat(svgParts[0], template[0], svgParts[1], template[1], id.toString(), svgParts[2], template[2], toHexString(invoices[id].seller), svgParts[3], template[3], toHexString(invoices[id].token), svgParts[4]);
-        svg = string.concat(svg, template[4], toString(invoices[id].amountOfTokens), svgParts[5], template[5], "0.001 ether", svgParts[9]);
+        if (invoices[id].seller == address(0)) revert Invalid();
+        Invoice storage targetInvoice = invoices[id];
+
+        string memory svg = string.concat(svgParts[0], template[0], svgParts[1], template[1], toString(id), svgParts[2], template[2], toHexString(targetInvoice.seller), svgParts[3], template[3], toHexString(targetInvoice.token), svgParts[4]);
+        svg = string.concat(svg, template[4], toString(targetInvoice.amountOfTokens), svgParts[5], template[5], "0.001 ether", svgParts[6], template[6], toString(targetInvoice.blockNumber) svgParts[9]);
         return svg;
     }
 
