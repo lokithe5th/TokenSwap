@@ -5,6 +5,7 @@ pragma solidity 0.8.19;
 import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
+import "openzeppelin-contracts/contracts/utils/Base64.sol";
 
 /// @title TokenSwap
 /// @author lourens
@@ -12,6 +13,7 @@ import "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 contract TokenSwap is ERC721 {
     using Strings for uint256;
+    using Strings for address;
     /// Target is the address to which market creation fees go
     address public target;
     /// Address nominated to take over collection of market creation fees
@@ -22,6 +24,7 @@ contract TokenSwap is ERC721 {
     /// The amount of markets created
     uint256 public supply;
 
+/*
     string[] private template = [
         "TokenSwap Invoice",
         "INV-",
@@ -31,9 +34,49 @@ contract TokenSwap is ERC721 {
         "Paid: ",
         "Block: "
     ];
+*/
+    bytes17 internal headingLbl = 0x546f6b656e5377617020496e766f696365; // TokenSwap Invoice
+    bytes4 internal invoiceNumberLbl = 0x494e562d;
+    bytes12 internal sellerLbl = 0x494e562d53656c6c65723a20;
+    bytes7 internal tokenLbl = 0x546f6b656e3a20;
+    bytes8 internal amountLbl = 0x416d6f756e743a20;
+    bytes6 internal paidLbl = 0x506169643a20;
+    bytes7 internal blockLbl = 0x426c6f636b3a20;
 
-    string[10] internal svgParts = [
-        '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base { fill: white; font-family: monospace; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="10" y="20" class="base">',
+    bytes32 internal svgStart0 = 0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230;
+    bytes32 internal svgStart1 = 0x30302f73766722207072657365727665417370656374526174696f3d22784d69;
+    bytes32 internal svgStart2 = 0x6e594d696e206d656574222076696577426f783d223020302033353020343030;
+    bytes32 internal svgStart3 = 0x223e3c7374796c653e2e62617365207b666f6e742d73697a653a313470783b7d;
+    bytes32 internal svgStart4 = 0x3c2f7374796c653e3c726563742077696474683d223130302522206865696768;
+    bytes32 internal svgStart5 = 0x743d2231303025222066696c6c3d22626c61636b222f3e3c7465787420783d22;
+    bytes32 internal svgStart6 = 0x31302220793d2232302220636c6173733d2262617365223e0000000000000000;
+    
+
+
+    /// Equivalent to <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">
+/*    bytes32[7] internal svgPart0 =  [
+                                    0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230,
+                                    0x30302f73766722207072657365727665417370656374526174696f3d22784d69,
+                                    0x6e594d696e206d656574222076696577426f783d223020302033353020343030,
+                                    0x223e3c7374796c653e2e62617365207b666f6e742d73697a653a313470783b7d,
+                                    0x3c2f7374796c653e3c726563742077696474683d223130302522206865696768,
+                                    0x743d2231303025222066696c6c3d22626c61636b222f3e3c7465787420783d22,
+                                    0x31302220793d2232302220636c6173733d2262617365223e0000000000000000
+                                ];
+*/
+    //bytes1[] internal svgPart1 = 0x3c2f746578743e3c7465787420783d2231302220793d2234302220636c6173733d2262617365223e;
+    //bytes1[] internal svgPart2 = 0x3c2f746578743e3c7465787420783d2231302220793d2236302220636c6173733d2262617365223e;
+    //bytes1[] internal svgPart3 = 0x3c2f746578743e3c7465787420783d2231302220793d223134302220636c6173733d2262617365223e;
+
+    /// Equal to "</text><text x="10" y="
+    bytes24 internal svgLinePart1 = 0x3c2f746578743e3c7465787420783d2231302220793d2230;
+    /// Equal to " class="base">
+    bytes16 internal svgLinePart2 = 0x302220636c6173733d2262617365223e;
+    bytes13 internal svgEnd = 0x3c2f746578743e3c2f7376673e;
+
+/*
+    string[8] internal svgParts = [
+        '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
         '</text><text x="10" y="40" class="base">',
         '</text><text x="10" y="60" class="base">',
         '</text><text x="10" y="80" class="base">',
@@ -44,7 +87,7 @@ contract TokenSwap is ERC721 {
 //        '</text><text x="10" y="160" class="base">',
         '</text></svg>'
     ];
-
+*/
     /****************************************************************
      *                  CONSTANTS                                   *
      ****************************************************************/
@@ -134,9 +177,15 @@ contract TokenSwap is ERC721 {
         if (accounts[msg.sender] < 0.001 ether) revert NoFunds();
 
         accounts[msg.sender] -= 0.001 ether;
-        invoices[supply] = new Invoice(msg.sender, targetToken, amount, USE_COST);
-        _mint(msg.sender, supply);
         supply++;
+
+        Invoice storage invoice = invoices[supply];
+        invoice.seller = msg.sender;
+        invoice.token = targetToken;
+        invoice.amountOfTokens = amount;
+        invoice.blocknumber = block.number;
+
+        _mint(msg.sender, supply);
 
         IERC20 token = IERC20(targetToken);
         uint256 startingBalance = token.balanceOf(address(this));
@@ -150,11 +199,9 @@ contract TokenSwap is ERC721 {
      *                  WIP: SVG INVOICE VIEWERS                  *
      ****************************************************************/
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        _requireMinted(tokenId);
-
       string memory json = Base64.encode(
         bytes(string.concat(
-          '{"name": "Invoice #', uint2str(id), ' "description": "TokenSwap Invoice", "image": "data:image/svg+xml;base64,', Base64.encode(bytes(generateSVGofTokenById(id))), '"}'))));
+          '{"name": "Invoice #', tokenId.toString(), ' "description": "TokenSwap Invoice", "image": "data:image/svg+xml;base64,', Base64.encode(bytes(generateSVGofTokenById(tokenId))), '"}')));
 
         json = string.concat('data:application/json;base64,', json);
       return json;
@@ -182,11 +229,22 @@ contract TokenSwap is ERC721 {
      */
     function generateSVGofTokenById(uint256 id) public view returns (string memory) {
         if (invoices[id].seller == address(0)) revert Invalid();
-        Invoice storage targetInvoice = invoices[id];
 
-        string memory svg = string.concat(svgParts[0], template[0], svgParts[1], template[1], toString(id), svgParts[2], template[2], toHexString(targetInvoice.seller), svgParts[3], template[3], toHexString(targetInvoice.token), svgParts[4]);
-        svg = string.concat(svg, template[4], toString(targetInvoice.amountOfTokens), svgParts[5], template[5], "0.001 ether", svgParts[6], template[6], toString(targetInvoice.blockNumber) svgParts[9]);
-        return svg;
+        string memory svg = string(abi.encodePacked(createSVGStart(), invoiceNumberLbl, id.toString(), createSVGLine(60), sellerLbl, invoices[id].seller.toHexString()));
+        svg = string(abi.encodePacked(svg, createSVGLine(80), tokenLbl, invoices[id].token.toHexString(), createSVGLine(100)));
+        return string(abi.encodePacked(svg, amountLbl, invoices[id].amountOfTokens.toString(), createSVGMiddle(), invoices[id].blocknumber.toString(), svgEnd));
+    }
+
+    function createSVGLine(uint256 y) internal view returns (string memory) {
+        return string(abi.encodePacked(svgLinePart1, y.toString(), svgLinePart2));
+    }
+
+    function createSVGStart() internal view returns (string memory) {
+        return string(abi.encodePacked(svgStart0, svgStart1, svgStart2, svgStart3, svgStart4, svgStart5, svgStart6, headingLbl, createSVGLine(40)));
+    }
+
+    function createSVGMiddle() internal view returns (string memory) {
+        return string(abi.encodePacked(createSVGLine(120), paidLbl, "0.001 ether", createSVGLine(140), blockLbl));
     }
 
     /****************************************************************
@@ -195,7 +253,7 @@ contract TokenSwap is ERC721 {
 
     /// @notice Allows a beneficiary organization to transfer out tokens
     /// @dev Beneficiaries can be degen too! But caller must audit ERC20 code. 
-    /// @note ASSUME ALL TOKENS ARE HOSTILE UNLESS CONFIRMED OTHERWISE
+    /// ASSUME ALL TOKENS ARE HOSTILE UNLESS CONFIRMED OTHERWISE
     function transferTokens(address targetToken, address to, uint256 amount) external {
         if (msg.sender != target) revert Unauthorized();
 
@@ -203,7 +261,7 @@ contract TokenSwap is ERC721 {
     }
 
     /// @notice Allows the `target` to withdraw accrued feess
-    /// @param Documents a parameter just like in doxygen (must be followed by parameter name)
+    /// @param to address to which to transfer `targetFunds`
     function withdrawFees(address to) external {
         if (msg.sender != target) revert Unauthorized();
         uint256 funds = targetFunds;
@@ -220,7 +278,7 @@ contract TokenSwap is ERC721 {
     /// @notice Nominates a new beneficiary
     /// @param newTarget The address that can claim accumalated fees
     function changeTarget(address newTarget) external {
-        if (msg.sender != target) revert Unuathorized();
+        if (msg.sender != target) revert Unauthorized();
         pendingTarget = newTarget;
     }
 
@@ -232,7 +290,7 @@ contract TokenSwap is ERC721 {
     }
 
     /// @notice The TokenShop does not allow direct ETH transfers
-    receive() external {
+    receive() payable external {
         revert NotAllowed();
     }
 }
