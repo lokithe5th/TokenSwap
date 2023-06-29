@@ -8,7 +8,7 @@ import "openzeppelin-contracts/contracts/utils/Strings.sol";
 import "openzeppelin-contracts/contracts/utils/Base64.sol";
 
 /// @title TokenSwap
-/// @author lourens
+/// @author @lourens
 /// @notice Permissionless fixed-price market maker for ERC20 tokens that crashed in value
 
 contract TokenSwap is ERC721 {
@@ -24,54 +24,6 @@ contract TokenSwap is ERC721 {
     /// The amount of markets created
     uint256 public supply;
 
-/*
-    string[] private template = [
-        "TokenSwap Invoice",
-        "INV-",
-        "Seller: ",
-        "Token: ",
-        "Amount: ",
-        "Paid: ",
-        "Block: "
-    ];
-*/
-    bytes17 internal headingLbl = 0x546f6b656e5377617020496e766f696365; // TokenSwap Invoice
-    bytes4 internal invoiceNumberLbl = 0x494e562d;
-    bytes12 internal sellerLbl = 0x494e562d53656c6c65723a20;
-    bytes7 internal tokenLbl = 0x546f6b656e3a20;
-    bytes8 internal amountLbl = 0x416d6f756e743a20;
-    bytes6 internal paidLbl = 0x506169643a20;
-    bytes7 internal blockLbl = 0x426c6f636b3a20;
-
-    // '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
-    bytes32 internal svgStart0 = 0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230;
-    bytes32 internal svgStart1 = 0x30302f73766722207072657365727665417370656374526174696f3d22784d69;
-    bytes32 internal svgStart2 = 0x6e594d696e206d656574222076696577426f783d223020302033353020343030;
-    bytes32 internal svgStart3 = 0x223e3c7374796c653e2e62617365207b666f6e742d73697a653a313470783b7d;
-    bytes32 internal svgStart4 = 0x3c2f7374796c653e3c726563742077696474683d223130302522206865696768;
-    bytes32 internal svgStart5 = 0x743d2231303025222066696c6c3d227768697465222f3e3c7465787420783d22;
-    bytes32 internal svgStart6 = 0x31302220793d2232302220636c6173733d2262617365223e0000000000000000;
-    
-    /// Equal to "</text><text x="10" y="
-    bytes23 internal svgLinePart1 = 0x3c2f746578743e3c7465787420783d2231302220793d22;
-    /// Equal to " class="base">
-    bytes15 internal svgLinePart2 = 0x2220636c6173733d2262617365223e;
-    bytes13 internal svgEnd = 0x3c2f746578743e3c2f7376673e;
-
-/*
-    string[8] internal svgParts = [
-        '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
-        '</text><text x="10" y="40" class="base">',
-        '</text><text x="10" y="60" class="base">',
-        '</text><text x="10" y="80" class="base">',
-        '</text><text x="10" y="100" class="base">',
-        '</text><text x="10" y="120" class="base">',
-        '</text><text x="10" y="140" class="base">',
-//        '</text><text x="10" y="160" class="base">',
-//        '</text><text x="10" y="160" class="base">',
-        '</text></svg>'
-    ];
-*/
     /****************************************************************
      *                  CONSTANTS                                   *
      ****************************************************************/
@@ -81,6 +33,29 @@ contract TokenSwap is ERC721 {
     /// The cost to call `createMarket` and `sellTokens`
     /// @dev this `USE_COST` is deducted from the callers internal `accounts[caller]`
     uint256 public constant USE_COST = 0.001 ether;
+
+    bytes17 internal constant headingLbl = 0x546f6b656e5377617020496e766f696365; // "TokenSwap Invoice"
+    bytes4 internal constant invoiceNumberLbl = 0x494e562d; // "INV-"
+    bytes12 internal constant sellerLbl = 0x494e562d53656c6c65723a20; // "Seller: "
+    bytes7 internal constant tokenLbl = 0x546f6b656e3a20; // "Token: "
+    bytes8 internal constant amountLbl = 0x416d6f756e743a20; // "Amount: "
+    bytes6 internal constant paidLbl = 0x506169643a20; // "Cost: "
+    bytes7 internal constant blockLbl = 0x426c6f636b3a20; // "Block: "
+
+    // '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
+    bytes32 internal constant svgStart0 = 0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230;
+    bytes32 internal constant svgStart1 = 0x30302f73766722207072657365727665417370656374526174696f3d22784d69;
+    bytes32 internal constant svgStart2 = 0x6e594d696e206d656574222076696577426f783d223020302033353020343030;
+    bytes32 internal constant svgStart3 = 0x223e3c7374796c653e2e62617365207b666f6e742d73697a653a313470783b7d;
+    bytes32 internal constant svgStart4 = 0x3c2f7374796c653e3c726563742077696474683d223130302522206865696768;
+    bytes32 internal constant svgStart5 = 0x743d2231303025222066696c6c3d227768697465222f3e3c7465787420783d22;
+    bytes24 internal constant svgStart6 = 0x31302220793d2232302220636c6173733d2262617365223e;
+    
+    /// Equal to "</text><text x="10" y="
+    bytes23 internal constant svgLinePart1 = 0x3c2f746578743e3c7465787420783d2231302220793d22;
+    /// Equal to " class="base">
+    bytes15 internal constant svgLinePart2 = 0x2220636c6173733d2262617365223e;
+    bytes13 internal constant svgEnd = 0x3c2f746578743e3c2f7376673e;
 
     /****************************************************************
      *                  ERRORS                                      *
