@@ -50,6 +50,7 @@ contract TokenSwapTest is Test {
         tokenSwap.createMarket(address(token));
 
         assertEq(tokenSwap.markets(address(token)), true);
+        vm.stopPrank();
     }
 
     function testMakeMarketExists() public {
@@ -81,9 +82,20 @@ contract TokenSwapTest is Test {
         tokenSwap.sellTokens(market, amount);
     }
 
+    function testSellTokensNoFunds(uint256 amount) public {
+        testMakeMarket();
+        vm.expectRevert(TokenSwap.NoFunds.selector);
+        tokenSwap.sellTokens(address(token), amount);
+    }
+
     function testSVG() public {
         testSellTokens();
         string memory svg = tokenSwap.renderTokenById(1);
         console.log(svg);
     }
+
+    /** TO DO: 
+     1. More tests for withdraw functionality
+     2. Try to break it
+     */
 }
