@@ -8,7 +8,7 @@ The contract is not owned by anyone, but BuidGuidl has been designated as the th
 
 ## How does it work?  
 
-Before you can access TokenSwap, you need to buy access for the princely sum of `0.005 ether`. The 'msg.sender`s account is credited with `0.005 ether`.
+Before you can access TokenSwap, you need to buy access for the princely sum of `0.005 ether`. The `msg.sender`'s account is credited with `0.005 ether`.
 
 Initializing a pool for a specific token consumes `0.001 ether` from `accounts[msg.sender]`.  
 
