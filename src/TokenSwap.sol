@@ -61,11 +61,13 @@ contract TokenSwap is ERC721 {
      *                  ERRORS                                      *
      ****************************************************************/
     /// `msg.value` is too low
-    error InsufficientValue();
+    error InvalidValue();
     /// The market already exists
     error Exists();
     /// Invoice has not been issued yet
     error Invalid();
+    /// Still has unsused funds
+    error FundsAvailable();
     /// The internal account balance is too low for requested action
     error NoFunds();
     /// No market has been created for the selected token
@@ -104,7 +106,8 @@ contract TokenSwap is ERC721 {
     /// @notice Buy access to the TokenShop
     /// @dev The message value must be at least 0.005 ether
     function buyAccess() external payable {
-        if (msg.value < 0.005 ether) revert InsufficientValue();
+        if (accounts[msg.sender] != 0) revert FundsAvailable();
+        if (msg.value != 0.005 ether) revert InvalidValue();
 
         accounts[msg.sender] = msg.value;
     }
@@ -194,15 +197,15 @@ contract TokenSwap is ERC721 {
         return string(abi.encodePacked(svg, amountLbl, invoices[id].amountOfTokens.toString(), createSVGMiddle(), invoices[id].blocknumber.toString(), svgEnd));
     }
 
-    function createSVGLine(bytes3 y) internal view returns (string memory) {
+    function createSVGLine(bytes3 y) internal pure returns (string memory) {
         return string(abi.encode(svgLinePart1, y, svgLinePart2));
     }
 
-    function createSVGStart() internal view returns (string memory) {
+    function createSVGStart() internal pure returns (string memory) {
         return string(abi.encodePacked(svgStart0, svgStart1, svgStart2, svgStart3, svgStart4, svgStart5, svgStart6, headingLbl, createSVGLine(0x003430)));
     }
 
-    function createSVGMiddle() internal view returns (string memory) {
+    function createSVGMiddle() internal pure returns (string memory) {
         return string(abi.encodePacked(createSVGLine(0x313230), paidLbl, "0.001 ether", createSVGLine(0x313430), blockLbl));
     }
 
