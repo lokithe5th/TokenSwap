@@ -35,5 +35,11 @@ The invoice contains:
 - Price
 - BlockNumber  
 
-**Please note: you are selling your tokens to TokenSwap and the ERC721 issued is not an invoice from TokenSwap to you (the seller), but is the invoice you as the seller issue to the buyer (TokenSwap). TokenSwap as a piece of autonomous code does not have use for the invoice, or regard for tax regulations, or understanding of local accounting principles. It always remains your responsibility to ensure you compply with your local tax and financial laws.**
+**Please note: you are selling your tokens to TokenSwap and the ERC721 issued is not an invoice from TokenSwap to you (the seller), but is the invoice you as the seller issue to the buyer (TokenSwap). TokenSwap as a piece of autonomous code does not have use for the invoice, or regard for tax regulations, or understanding of local accounting principles. It always remains your responsibility to ensure you comply with your local tax and financial laws.**  
 
+## FAQs  
+
+#### Why can I only buy access with 0.005 ether?  
+There is no mechanism to refund access bought to you as a user. To keep the potential for loss of funds small a user is only allowed to send `0.005 ether` to the contract at a time. If you are using TokenSwap you have already been degen, and TokenSwap won't enable you further.  
+
+#### Yes, more questions will appear here as I build it out a bit more...
