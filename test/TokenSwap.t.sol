@@ -9,9 +9,10 @@ contract TokenSwapTest is Test {
     MockToken public token;
 
     address public user = address(0x20);
+    address public beneficiary = address(0x10);
 
     function setUp() public {
-        tokenSwap = new TokenSwap(address(0x10));
+        tokenSwap = new TokenSwap(beneficiary);
         token = new MockToken("Mock Token", "MCK");
 
         vm.prank(user);
@@ -24,7 +25,7 @@ contract TokenSwapTest is Test {
         tokenSwap.buyAccess{value: 0.005 ether}();
         vm.stopPrank();
 
-        assertEq(tokenSwap.accounts(user), 0.005 ether);
+        assertEq(tokenSwap.accounts(user), 0.004 ether);
     }
 
     function testBuyAccessInvalidValue(uint256 amount) public {
@@ -73,6 +74,7 @@ contract TokenSwapTest is Test {
         token.approve(address(tokenSwap), 10 ether);
         tokenSwap.sellTokens(address(token), 1 ether);
         assertEq(token.balanceOf(user), 9 ether);
+        vm.stopPrank();
     }
 
     function testSellTokensNoMarket(address market, uint256 amount) public {
@@ -94,8 +96,50 @@ contract TokenSwapTest is Test {
         console.log(svg);
     }
 
+    function testReceiveEther() public {
+        vm.expectRevert(TokenSwap.NotAllowed.selector);
+        (bool success, ) = address(tokenSwap).call{value: 1 ether}("");
+    }
+
+    function testTransferTokens(uint256 amount, address to) public {
+        testSellTokens();
+        assumeNoPrecompiles(to);
+        vm.assume(amount < 1 ether);
+        vm.assume(to != user && to != beneficiary && to != address(0) && to != address(token) && to != address(tokenSwap));
+        uint256 balanceBefore = token.balanceOf(to);
+        vm.startPrank(beneficiary);
+        tokenSwap.transferTokens(address(token), to, amount);
+        vm.stopPrank();
+        assertEq(token.balanceOf(to) - balanceBefore, amount);
+    }
+
+    function testWithdrawFees(address to) public {
+        testSellTokens();
+        assumePayable(to);
+        vm.assume(to != address(0) && to != user && to != address(tokenSwap));
+        vm.startPrank(beneficiary);
+        tokenSwap.withdrawFees(to);
+        vm.stopPrank();
+    }
+
+    function testNominateTarget(address target) public {
+        vm.assume(target != address(0));
+        vm.startPrank(beneficiary);
+        tokenSwap.nominateTarget(target);
+        assertEq(tokenSwap.pendingTarget(), target);
+        vm.stopPrank();
+    }
+
+    function testClaimNomination(address target) public {
+        vm.assume(target != address(0));
+        testNominateTarget(target);
+        vm.startPrank(target);
+        tokenSwap.claimNomination();
+        vm.stopPrank();
+        assertEq(tokenSwap.target(), target);
+    }
     /** TO DO: 
-     1. More tests for withdraw functionality
+     1. More tests
      2. Try to break it
      */
 }

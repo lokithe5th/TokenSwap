@@ -18,6 +18,9 @@ contract TokenSwap is ERC721 {
     address public target;
     /// Address nominated to take over collection of market creation fees
     address public pendingTarget;
+
+    /// Locked or not
+    uint96 private _locked;
     /// Amount of ether accrued to the `target`
     uint256 public targetFunds;
 
@@ -42,7 +45,7 @@ contract TokenSwap is ERC721 {
     bytes6 internal constant paidLbl = 0x506169643a20; // "Cost: "
     bytes7 internal constant blockLbl = 0x426c6f636b3a20; // "Block: "
 
-    // '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
+    // Equivalent to '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
     bytes32 internal constant svgStart0 = 0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230;
     bytes32 internal constant svgStart1 = 0x30302f73766722207072657365727665417370656374526174696f3d22784d69;
     bytes32 internal constant svgStart2 = 0x6e594d696e206d656574222076696577426f783d223020302033353020343030;
@@ -72,6 +75,8 @@ contract TokenSwap is ERC721 {
     error NoFunds();
     /// No market has been created for the selected token
     error NoMarket();
+    /// Let's not allow reentrancy
+    error NonReentrant();
     /// Please donate direct deposits to buidlguidl.eth
     error NotAllowed();
     /// The requested token transfer was unsuccessful
@@ -80,7 +85,7 @@ contract TokenSwap is ERC721 {
     error Unauthorized();
 
     /// Holds data from which invoice SVG can be built
-    /// We exclude `cost` here because the price offered is always `USE_COST`
+    /// We exclude `cost` here because the price offered by TokenSwap is always `USE_COST`
     struct Invoice {
         address seller; /// the account selling the tokens
         address token; /// the token that was sold
@@ -109,7 +114,8 @@ contract TokenSwap is ERC721 {
         if (accounts[msg.sender] != 0) revert FundsAvailable();
         if (msg.value != 0.005 ether) revert InvalidValue();
 
-        accounts[msg.sender] = msg.value;
+        accounts[msg.sender] = 0.004 ether;
+        targetFunds = 0.001 ether;
     }
 
     /****************************************************************
@@ -134,7 +140,7 @@ contract TokenSwap is ERC721 {
     /// @dev The seller must have approved the TokenShop for `amount`
     /// @param targetToken Address of the token the seller wishes to make a market for
     /// @param amount The amount of the specified token the seller wishes to sell
-    function sellTokens(address targetToken, uint256 amount) external {
+    function sellTokens(address targetToken, uint256 amount) external notLocked() {
         if (!markets[targetToken]) revert NoMarket();
         if (accounts[msg.sender] < 0.001 ether) revert NoFunds();
 
@@ -216,7 +222,7 @@ contract TokenSwap is ERC721 {
     /// @notice Allows a beneficiary organization to transfer out tokens
     /// @dev Beneficiaries can be degen too! But caller must audit ERC20 code. 
     /// ASSUME ALL TOKENS ARE HOSTILE UNLESS CONFIRMED OTHERWISE
-    function transferTokens(address targetToken, address to, uint256 amount) external {
+    function transferTokens(address targetToken, address to, uint256 amount) external notLocked() {
         if (msg.sender != target) revert Unauthorized();
 
         IERC20(targetToken).transfer(to, amount);
@@ -239,19 +245,31 @@ contract TokenSwap is ERC721 {
 
     /// @notice Nominates a new beneficiary
     /// @param newTarget The address that can claim accumalated fees
-    function changeTarget(address newTarget) external {
+    function nominateTarget(address newTarget) external {
         if (msg.sender != target) revert Unauthorized();
         pendingTarget = newTarget;
     }
 
     /// @notice Allows a nominated beneficiary to accept nomination
-    function claimTarget() external {
+    function claimNomination() external {
         if (msg.sender != pendingTarget) revert Unauthorized();
         target = pendingTarget;
         delete pendingTarget;
     }
 
-    /// @notice The TokenShop does not allow direct ETH transfers
+    /****************************************************************
+     *                       MODIFIERS                              *
+     ****************************************************************/
+    
+    /// @notice Minimal non-reentrant fix
+    modifier notLocked() {
+        if (_locked != 0) revert NonReentrant();
+        _locked = 1;
+        _;
+        _locked = 0;
+    }
+
+    /// @notice The TokenSwap does not accept direct ETH transfers
     receive() payable external {
         revert NotAllowed();
     }

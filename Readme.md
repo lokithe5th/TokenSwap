@@ -8,9 +8,9 @@ The contract is not owned by anyone, but BuidGuidl has been designated as the th
 
 ## How does it work?  
 
-Before you can access TokenSwap, you need to buy access for the princely sum of `0.005 ether`. The `msg.sender`'s account is credited with `0.005 ether`.
+Before you can access TokenSwap, you need to buy access for the princely sum of `0.005 ether`. The `msg.sender`'s account is credited with `0.004 ether` and the funding beneficiary is allocated `0.001 ether`.   
 
-Initializing a pool for a specific token consumes `0.001 ether` from `accounts[msg.sender]`.  
+Initializing a pool for a specific token consumes `0.001 ether` from `accounts[msg.sender]`. This acts as an anti-spam filter.  
 
 Once a pool exists for your specific token, the TokenSwap contract will buy as much of that token from you as you want to sell, at the fixed offer price of `0.001 ether`.  
 
@@ -19,9 +19,7 @@ Once you've sold your ERC20 tokens, that's it.
 
 It's gone forever.  
 
-The catch? Well, the BuidlGuidl (or whomever they nominate to take their place) can transfer the ERC20 tokens out. This means that aside from the `0.001 ether` fee that they receive for new pools, they can call `degenMode` on themselves and resell the tokens should the swap price of a memecoin improve. 
-
-**`degenMode`** is dangerous, use with care!
+The catch? Well, the BuidlGuidl (or whomever they nominate to take their place) can transfer the ERC20 tokens out. This means that aside from the `0.001 ether` fee that they receive for access, they can go *degen* on themselves and resell the tokens should the swap price of a memecoin improve. 
 
 ## Will your accountant be happy?  
 
@@ -39,7 +37,13 @@ The invoice contains:
 
 ## FAQs  
 
-#### Why can I only buy access with 0.005 ether?  
-There is no mechanism to refund access bought to you as a user. To keep the potential for loss of funds small a user is only allowed to send `0.005 ether` to the contract at a time. If you are using TokenSwap you have already been degen, and TokenSwap won't enable you further.  
+#### What's the point of this?  
+We've all been there, watching etherscan or the mempool, looking for that new `PEPE` token, hoping your bag goes to the moon. In most cases, it doesn't. Please research tax loss harvesting - always look for local information. But the gist of it is that if you sell your tokens for less than what you bought them, that is a way to "capture" this loss for tax purposes. In the seller's opinion, the tokens sold will never go up in value again. The `TokenSwap` contract is an expression of the contrary opinion, held for the public good, and with the ability to act on that opinion should sentiment on the token sold change. 
 
-#### Yes, more questions will appear here as I build it out a bit more...
+#### Why can I only buy access with 0.005 ether?  
+There is no mechanism to refund access which you've bought back to you as a user. To keep the potential for loss of funds small a user is only allowed to send `0.005 ether` to the contract at a time. If you are using TokenSwap you have already been degen, and TokenSwap won't enable you further.  
+
+#### What is this "target beneficiary"?  
+To start with the target beneficiary is the **BuidlGuidl**, simply because they've done so much to help onboard devs into web3. 
+
+The web3 ethos is built around public goods. TokenSwap is intended as a public good for Ethereum. The idea is that should BuidlGuidl (or whichever target beneficiary is currently slotted in) decide they would like to nominate a different public good, they can pass on the benefit that project by calling `nominateTarget`. 
