@@ -164,7 +164,7 @@ contract TokenSwap is ERC721 {
     }
 
     /****************************************************************
-     *                  WIP: SVG INVOICE VIEWERS                  *
+     *                   SVG INVOICE VIEWERS                        *
      ****************************************************************/
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
       string memory json = Base64.encode(
@@ -198,21 +198,30 @@ contract TokenSwap is ERC721 {
     function generateSVGofTokenById(uint256 id) public view returns (string memory) {
         if (invoices[id].seller == address(0)) revert Invalid();
 
-        string memory svg = string(abi.encodePacked(createSVGStart(), invoiceNumberLbl, id.toString(), createSVGLine(0x003630), sellerLbl, invoices[id].seller.toHexString()));
-        svg = string(abi.encodePacked(svg, createSVGLine(0x003830), tokenLbl, invoices[id].token.toHexString(), createSVGLine(0x313030)));
-        return string(abi.encodePacked(svg, amountLbl, invoices[id].amountOfTokens.toString(), createSVGMiddle(), invoices[id].blocknumber.toString(), svgEnd));
+        string memory svg = string(abi.encodePacked(_createSVGStart(), invoiceNumberLbl, id.toString(), _createSVGLine(0x003630), sellerLbl, invoices[id].seller.toHexString()));
+        svg = string(abi.encodePacked(svg, _createSVGLine(0x003830), tokenLbl, invoices[id].token.toHexString(), _createSVGLine(0x313030)));
+        return string(abi.encodePacked(svg, amountLbl, invoices[id].amountOfTokens.toString(), _createSVGMiddle(), invoices[id].blocknumber.toString(), svgEnd));
     }
 
-    function createSVGLine(bytes3 y) internal pure returns (string memory) {
+    /// @notice Helper to construct string vir NFT view functions
+    /// @dev Creates "</text><text x="10" y="{y}" class="base">
+    /// @return SVG line start code
+    function _createSVGLine(bytes3 y) internal pure returns (string memory) {
         return string(abi.encode(svgLinePart1, y, svgLinePart2));
     }
 
-    function createSVGStart() internal pure returns (string memory) {
-        return string(abi.encodePacked(svgStart0, svgStart1, svgStart2, svgStart3, svgStart4, svgStart5, svgStart6, headingLbl, createSVGLine(0x003430)));
+    /// @notice Helper to construct string vir NFT view functions
+    /// @dev Refer to CONSTANTS natspec for detail
+    /// @return SVG file start code
+    function _createSVGStart() internal pure returns (string memory) {
+        return string(abi.encodePacked(svgStart0, svgStart1, svgStart2, svgStart3, svgStart4, svgStart5, svgStart6, headingLbl, _createSVGLine(0x003430)));
     }
 
-    function createSVGMiddle() internal pure returns (string memory) {
-        return string(abi.encodePacked(createSVGLine(0x313230), paidLbl, "0.001 ether", createSVGLine(0x313430), blockLbl));
+    /// @notice Helper to construct string vir NFT view functions
+    /// @dev Refer to CONSTANTS natspec
+    /// @return SVG middle template code
+    function _createSVGMiddle() internal pure returns (string memory) {
+        return string(abi.encodePacked(_createSVGLine(0x313230), paidLbl, "0.001 ether", _createSVGLine(0x313430), blockLbl));
     }
 
     /****************************************************************
@@ -268,6 +277,10 @@ contract TokenSwap is ERC721 {
         _;
         _locked = 0;
     }
+
+    /****************************************************************
+     *                       MISC                                   *
+     ****************************************************************/
 
     /// @notice The TokenSwap does not accept direct ETH transfers
     receive() payable external {
