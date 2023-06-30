@@ -19,7 +19,7 @@ Once you've sold your ERC20 tokens, that's it.
 
 It's gone forever.  
 
-The catch? Well, the BuidlGuidl (or whomever they nominate to take their place) can transfer the ERC20 tokens out. This means that aside from the `0.001 ether` fee that they receive for access, they can go *degen* on themselves and resell the tokens should the swap price of a memecoin improve. 
+The catch? Well, the BuidlGuidl (or whomever they nominate to take their place) can transfer the ERC20 tokens out. This means that aside from the `0.001 ether` fee that they receive for access or new markets, they can go *degen* on themselves and resell the tokens should the swap price of a memecoin improve. 
 
 ## Will your accountant be happy?  
 
@@ -33,12 +33,12 @@ The invoice contains:
 - Price
 - BlockNumber  
 
-**Please note: you are selling your tokens to TokenSwap and the ERC721 issued is not an invoice from TokenSwap to you (the seller), but is the invoice you as the seller issue to the buyer (TokenSwap). TokenSwap as a piece of autonomous code does not have use for the invoice, or regard for tax regulations, or understanding of local accounting principles. It always remains your responsibility to ensure you comply with your local tax and financial laws.**  
+**Please note: you are selling your tokens to TokenSwap and the ERC721 issued is not an invoice from TokenSwap to you (the seller), but is the invoice you as the seller issue to the buyer (TokenSwap). It's like you are using a decentralized invoice issuing service. TokenSwap as a piece of autonomous code does not have use for the invoice, or regard for tax regulations, or understanding of local accounting principles. It always remains your responsibility to ensure you comply with your local tax and financial laws.**  
 
 ## FAQs  
 
 #### What's the point of this?  
-We've all been there, watching etherscan or the mempool, looking for that new `PEPE` token, hoping your bag goes to the moon. In most cases, it doesn't. Please research tax loss harvesting - always look for local information. But the gist of it is that if you sell your tokens for less than what you bought them, that is a way to "capture" this loss for tax purposes. In the seller's opinion, the tokens sold will never go up in value again. The `TokenSwap` contract is an expression of the contrary opinion, held for the public good, and with the ability to act on that opinion should sentiment on the token sold change. 
+We've all been there, watching etherscan or the mempool, looking for that new `PEPE` token, hoping your bag goes to the moon. In most cases, it doesn't. This is not tax advice, please research tax loss harvesting - always look for local information. But the gist of it is that if you sell your tokens to someone for less than what you bought them, you can "capture" this loss for tax purposes (i.e. turning it from an unrealized to realized loss). In the seller's opinion, the tokens sold will never go up in value again. The `TokenSwap` contract is an expression of the contrary opinion, held for the public good, and with the ability to act on that opinion should sentiment on the token sold change. 
 
 #### Why can I only buy access with 0.005 ether?  
 There is no mechanism to refund access which you've bought back to you as a user. To keep the potential for loss of funds small a user is only allowed to send `0.005 ether` to the contract at a time. If you are using TokenSwap you have already been degen, and TokenSwap won't enable you further.  
