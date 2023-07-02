@@ -109,7 +109,7 @@ contract TokenSwap is ERC721 {
      ****************************************************************/
 
     /// @notice Buy access to the TokenShop
-    /// @dev The message value must be at least 0.005 ether
+    /// @dev The message value must be 0.005 ether
     function buyAccess() external payable {
         if (accounts[msg.sender] != 0) revert FundsAvailable();
         if (msg.value != 0.005 ether) revert InvalidValue();
@@ -161,6 +161,35 @@ contract TokenSwap is ERC721 {
         token.transferFrom(msg.sender, address(this), amount);
 
         if (token.balanceOf(address(this)) != startingBalance + amount) revert NoTransfer();
+    }
+
+    /// @notice Sell NFTs to the TokenShop for a fixed price
+    /// @dev The seller must have approved the TokenShop to transfer the tokens
+    /// @param targetToken Address of the token the seller wishes to make a market for
+    /// @param tokenIds The ids of the specified tokens the seller wishes to sell
+    function sellTokens(address targetToken, uint256[] calldata tokenIds) external notLocked() {
+        if (!markets[targetToken]) revert NoMarket();
+        if (accounts[msg.sender] < 0.001 ether) revert NoFunds();
+
+        uint256 numberOfTokens = tokenIds.length;
+
+        accounts[msg.sender] -= 0.001 ether;
+        supply++;
+
+        Invoice storage invoice = invoices[supply];
+        invoice.seller = msg.sender;
+        invoice.token = targetToken;
+        invoice.amountOfTokens = numberOfTokens;
+        invoice.blocknumber = block.number;
+
+        _mint(msg.sender, supply);
+
+        for (uint256 i; i < numberOfTokens; ) {
+            ERC721(targetToken).safeTransferFrom(from, to, tokenId);
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /****************************************************************
