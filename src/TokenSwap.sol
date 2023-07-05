@@ -44,6 +44,7 @@ contract TokenSwap is ERC721 {
     bytes8 internal constant amountLbl = 0x416d6f756e743a20; // "Amount: "
     bytes6 internal constant paidLbl = 0x506169643a20; // "Cost: "
     bytes7 internal constant blockLbl = 0x426c6f636b3a20; // "Block: "
+    bytes11 internal constant priceLbl = 0x302e303031206574686572; // "0.001 ether"
 
     // Equivalent to '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 400"><style>.base {font-size:14px;}</style><rect width="100%" height="100%" fill="black"/><text x="10" y="20" class="base">',
     bytes32 internal constant svgStart0 = 0x3c73766720786d6c6e733d22687474703a2f2f7777772e77332e6f72672f3230;
@@ -52,6 +53,7 @@ contract TokenSwap is ERC721 {
     bytes32 internal constant svgStart3 = 0x223e3c7374796c653e2e62617365207b666f6e742d73697a653a313470783b7d;
     bytes32 internal constant svgStart4 = 0x3c2f7374796c653e3c726563742077696474683d223130302522206865696768;
     bytes32 internal constant svgStart5 = 0x743d2231303025222066696c6c3d227768697465222f3e3c7465787420783d22;
+ 
     bytes24 internal constant svgStart6 = 0x31302220793d2232302220636c6173733d2262617365223e;
     
     /// Equal to "</text><text x="10" y="
@@ -59,6 +61,12 @@ contract TokenSwap is ERC721 {
     /// Equal to " class="base">
     bytes15 internal constant svgLinePart2 = 0x2220636c6173733d2262617365223e;
     bytes13 internal constant svgEnd = 0x3c2f746578743e3c2f7376673e;
+
+    bytes32 internal constant tokenUri1 = 0x20226465736372697074696f6e223a2022546f6b656e5377617020496e766f69;
+    bytes32 internal constant tokenUri2 = 0x6365222c2022696d616765223a2022646174613a696d6167652f7376672b786d;
+    bytes9 internal constant tokenUri3 = 0x6c3b6261736536342c;
+    bytes19 internal constant tokenUriStart = 0x7b226e616d65223a2022496e766f6963652023;
+    bytes29 internal constant tokenUriData = 0x646174613a6170706c69636174696f6e2f6a736f6e3b6261736536342c;
 
     /****************************************************************
      *                  ERRORS                                      *
@@ -185,7 +193,7 @@ contract TokenSwap is ERC721 {
         _mint(msg.sender, supply);
 
         for (uint256 i; i < numberOfTokens; ) {
-            ERC721(targetToken).safeTransferFrom(from, to, tokenId);
+            ERC721(targetToken).safeTransferFrom(msg.sender, address(this), tokenIds[i]);
             unchecked {
                 ++i;
             }
@@ -198,9 +206,12 @@ contract TokenSwap is ERC721 {
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
       string memory json = Base64.encode(
         bytes(string.concat(
-          '{"name": "Invoice #', tokenId.toString(), ' "description": "TokenSwap Invoice", "image": "data:image/svg+xml;base64,', Base64.encode(bytes(generateSVGofTokenById(tokenId))), '"}')));
+            _createURIStart(),
+            tokenId.toString(),
+            _createURIDescription(),
+            Base64.encode(bytes(generateSVGofTokenById(tokenId))), '"}')));
 
-        json = string.concat('data:application/json;base64,', json);
+        json = string.concat(_createURIData(), json);
       return json;
     }
 
@@ -232,6 +243,10 @@ contract TokenSwap is ERC721 {
         return string(abi.encodePacked(svg, amountLbl, invoices[id].amountOfTokens.toString(), _createSVGMiddle(), invoices[id].blocknumber.toString(), svgEnd));
     }
 
+    /****************************************************************
+     *                       HELPERS                                *
+     ****************************************************************/
+
     /// @notice Helper to construct string vir NFT view functions
     /// @dev Creates "</text><text x="10" y="{y}" class="base">
     /// @return SVG line start code
@@ -250,7 +265,28 @@ contract TokenSwap is ERC721 {
     /// @dev Refer to CONSTANTS natspec
     /// @return SVG middle template code
     function _createSVGMiddle() internal pure returns (string memory) {
-        return string(abi.encodePacked(_createSVGLine(0x313230), paidLbl, "0.001 ether", _createSVGLine(0x313430), blockLbl));
+        return string(abi.encodePacked(_createSVGLine(0x313230), paidLbl, priceLbl, _createSVGLine(0x313430), blockLbl));
+    }
+
+    /// @notice Helper to construct string vir NFT view functions
+    /// @dev Refer to CONSTANTS natspec
+    /// @return SVG URI template code
+    function _createURIDescription() internal pure returns (string memory) {
+        return string(abi.encodePacked(tokenUri1, tokenUri2, tokenUri3));
+    }
+
+    /// @notice Helper to construct string vir NFT view functions
+    /// @dev Refer to CONSTANTS natspec
+    /// @return SVG URI template code
+    function _createURIStart() internal pure returns (string memory) {
+        return string(abi.encodePacked(tokenUriStart));
+    }
+
+    /// @notice Helper to construct string vir NFT view functions
+    /// @dev Refer to CONSTANTS natspec
+    /// @return SVG data template code
+    function _createURIData() internal pure returns (string memory) {
+        return string(abi.encodePacked(tokenUriData));
     }
 
     /****************************************************************
@@ -314,5 +350,13 @@ contract TokenSwap is ERC721 {
     /// @notice The TokenSwap does not accept direct ETH transfers
     receive() payable external {
         revert NotAllowed();
+    }
+
+    /// @notice To support `safeTransfer` of ERC721 tokens
+    /// @return bytes64 selector
+    function onERC721Received(address, address, uint256, bytes calldata) external view returns (bytes4) {
+        /// There is no reason the TokenSwap contract should hold it's own NFT
+        if (msg.sender == address(this)) revert NotAllowed();
+        return IERC721Receiver.onERC721Received.selector;
     }
 }

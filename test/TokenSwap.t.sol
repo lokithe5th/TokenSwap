@@ -138,6 +138,12 @@ contract TokenSwapTest is Test {
         vm.stopPrank();
         assertEq(tokenSwap.target(), target);
     }
+
+    function testSVGURI() public {
+        testSellTokens();
+        string memory svg = tokenSwap.renderTokenById(1);
+        console.log(svg);
+    }
     /** TO DO: 
      1. More tests
      2. Try to break it
