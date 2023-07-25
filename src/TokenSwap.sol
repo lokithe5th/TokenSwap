@@ -16,11 +16,12 @@ contract TokenSwap is ERC721 {
     using Strings for address;
     /// Target is the address to which market creation fees go
     address public target;
+    /// Locked or not
+    uint96 private _locked;
+
     /// Address nominated to take over collection of market creation fees
     address public pendingTarget;
 
-    /// Locked or not
-    uint96 private _locked;
     /// Amount of ether accrued to the `target`
     uint256 public targetFunds;
 
@@ -53,7 +54,6 @@ contract TokenSwap is ERC721 {
     bytes32 internal constant svgStart3 = 0x223e3c7374796c653e2e62617365207b666f6e742d73697a653a313470783b7d;
     bytes32 internal constant svgStart4 = 0x3c2f7374796c653e3c726563742077696474683d223130302522206865696768;
     bytes32 internal constant svgStart5 = 0x743d2231303025222066696c6c3d227768697465222f3e3c7465787420783d22;
- 
     bytes24 internal constant svgStart6 = 0x31302220793d2232302220636c6173733d2262617365223e;
     
     /// Equal to "</text><text x="10" y="
@@ -179,6 +179,9 @@ contract TokenSwap is ERC721 {
         if (!markets[targetToken]) revert NoMarket();
         if (accounts[msg.sender] < 0.001 ether) revert NoFunds();
 
+        /// Why no input validation on tokenIds?
+        /// If there are duplicates it will revert in `safeTransferFrom`
+
         uint256 numberOfTokens = tokenIds.length;
 
         accounts[msg.sender] -= 0.001 ether;
@@ -205,7 +208,7 @@ contract TokenSwap is ERC721 {
      ****************************************************************/
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
       string memory json = Base64.encode(
-        bytes(string.concat(
+        bytes(abi.encodePacked(
             _createURIStart(),
             tokenId.toString(),
             _createURIDescription(),
